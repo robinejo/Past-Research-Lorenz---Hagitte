@@ -1,0 +1,183 @@
+```{r}
+#D&D Syntax
+library(car)
+library(psych)
+library(Hmisc)
+library(readxl)
+library(lavaan)
+library(semTools)
+library(corrplot)
+library(GPArotation)
+library(apaTables)
+library(effectsize)
+
+
+data_dnd<-read.csv("../Data/Lorenz, Hagitte, & Brandt. D&D Data.csv",sep = ";",na.strings = "-77")
+attach(data_dnd)
+data_dnd$classes_new<- recode(data_dnd$classes,"0=-77")
+
+data_dnd <- data_dnd %>%
+  select(sort(names(.)))
+
+#t-tests for each Big5 factor dnd vs non dnd 
+#bonferroni-Holm
+
+data_dnd$status <- factor(data_dnd$status,
+                          levels = 1:2,
+                          labels = c("player", "non_player"))
+
+attach(data_dnd)
+#means
+extra<- data.frame(e1, e2, e3, e4, e5, e6, e7, e8)
+con <- data.frame(c1, c2, c3, c4, c5, c5, c6, c7, c8, c9)
+open <- data.frame(o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
+agree <- data.frame(a1, a2, a3, a4, a5, a6, a7, a8, a9)
+neuro <- data.frame(n1, n2, n3, n4, n5, n6, n7, n8)
+charisma <- data.frame(charisma)
+
+data_dnd$extra_m <- rowMeans(extra)
+data_dnd$con_m <- rowMeans(con)
+data_dnd$open_m <- rowMeans(open)
+data_dnd$agree_m <- rowMeans(agree)
+data_dnd$neuro_m <- rowMeans(neuro)
+data_dnd$charisma_n <- rowMeans(charisma)
+
+
+
+```
+
+Note: The reported means in data_dnd (agree_mean, extr_mean, neuro_mean, con_mean, open_mean) are not calculated with the reversed scores!!
+
+
+```{r}
+#Robines Code:
+
+#Reversed Scores
+extra_r <- data.frame(e1, e2r, e3, e4, e5r, e6, e7r, e8)
+con_r <- data.frame(c1, c2r, c3, c4r, c5, c5r, c6, c7, c8, c9r)
+open_r <- data.frame(o1, o2, o3, o4, o5, o6, o7r, o8, o9r, o10)
+agree_r <- data.frame(a1r, a2, a3r, a4, a5, a6r, a7, a8r, a9)
+neuro_r <- data.frame(n1, n2r, n3, n4, n5r, n6, n7r, n8)
+charisma_r <- data.frame(charisma)
+
+#Mean with reversed scores
+data_dnd$extra_m_r <- rowMeans(extra_r)
+data_dnd$con_m_r <- rowMeans(con_r)
+data_dnd$open_m_r <- rowMeans(open_r)
+data_dnd$agree_m_r <- rowMeans(agree_r)
+data_dnd$neuro_m_r <- rowMeans(neuro_r)
+data_dnd$charisma_n <- rowMeans(charisma)
+
+mean_overview <- data_dnd |>
+  select(extra_m, con_m, open_m, agree_m, neuro_m, open_mean, neuro_mean, extr_mean, agree_mean, con_mean, extra_m_r, con_m_r, open_m_r, agree_m_r, neuro_m_r)
+
+missing_data_personality_test <- data_dnd |>
+  select(1:13, 16:28, 33:43, 48:58, 60:71)
+
+view(missing_data_personality_test)
+
+
+#T-test with reversed scores
+t.test(data_dnd$extra_m_r ~ status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$open_m_r ~ status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$con_m_r ~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$agree_m_r ~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$neuro_m_r ~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+
+
+```
+
+Subject-Numbers??
+
+```{r}
+
+#ttests
+t.test(data_dnd$extra_m ~ status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$open_m~ status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$con_m~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$agree_m~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+t.test(data_dnd$neuro_m~status, data = data_dnd, var.equal=TRUE, alternative="two.sided", p.adjust.methods="bonferroni")
+
+
+# In order to run the code (make it work)i had to "add data_dnd$"
+```
+
+```{r}
+
+#cohens d
+
+cohen.d(data_dnd$extra_m, status,alpha=.05,std=TRUE)
+cohen.d(data_dnd$open_m, status,alpha=.05,std=TRUE)
+cohen.d(data_dnd$con_m, status,alpha=.05,std=TRUE)
+cohen.d(data_dnd$agree_m, status,alpha=.05,std=TRUE)
+cohen.d(data_dnd$neuro_m, status,alpha=.05,std=TRUE)
+
+#correlation (spearman) of preferred character`s charisma and own charisma (reported extraversion)
+
+charisma_corset <- subset(data_dnd, select = c(charisma_n, extra_m, status))
+charisma_status <- subset(charisma_corset, status==1)
+r.corr(as.matrix(charisma_status), type=c("spearman"))
+
+#cor table big five age 
+table1 <- data.frame(open_m, con_m, extra_m, agree_m, neuro_m, age, status, education)
+apa.cor.table(table1, filename = "table1.doc", table.number = 1)
+
+#Omega
+omega(open)
+omega(con)
+omega(extra)
+omega(agree)
+omega(neuro)
+
+
+
+```
+
+
+
+```
+
+
+# ians code
+
+```{r}
+missingness <- data_dnd |>
+  select_if(is.numeric) |>   # Select numeric columns
+  mutate_all(~ifelse(is.na(.), 1, 0)) |>   # Convert missing to 0 and non-missing to 1
+  summarise_all(mean) |>
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "proportion_missing")
+
+missingness_count <- data_dnd |>
+  select_if(is.numeric) |>   # Select numeric columns
+  mutate_all(~ifelse(is.na(.), 1, 0)) |>   # Convert missing to 0 and non-missing to 1
+  summarise_all(sum) |>
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "proportion_missing")
+
+
+min_all <- data_dnd |>
+  select_if(is.numeric) |>   # Select numeric columns
+  summarise_all(min, na.rm = TRUE) |>
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "min")
+
+max_all <- data_dnd |>
+  select_if(is.numeric) |>   # Select numeric columns
+  summarise_all(max, na.rm = TRUE) |>
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "max")
+               
+missing_data_personality_test |>
+  mutate(score = case_when(is.na(score) ~ NA,
+                           is.numeric(score) ~ 6 - score))
+
+summarize()
+
+```
+
+
